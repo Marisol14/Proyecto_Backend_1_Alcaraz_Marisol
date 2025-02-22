@@ -42,9 +42,9 @@ Se agregó una recarga automática en / tras eliminar productos para reflejar lo
 
 🔧 1. Clonar el repositorio
 
-git clone https://github.com/JonatanUribio7749/Proyecto_Backend_Jonatan_Uribio.git
+git clone https://github.com/Marisol14/Proyecto_Backend_1_Alcaraz_Marisol.git
 
-cd Proyecto_Backend_Jonatan_Uribio
+cd Proyecto_Backend_1_Alcaraz_Marisol
 
 📦 2. Instalar dependencias
 
