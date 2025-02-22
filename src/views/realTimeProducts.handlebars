@@ -1,0 +1,58 @@
+<h1>Productos en Tiempo Real</h1>
+
+<ul id="listaProductos">
+    {{#each products}}
+        <li data-id="{{this.id}}">
+            <strong>{{this.title}}</strong> - ${{this.price}}
+            <button class="eliminar-btn">❌ Eliminar</button>
+        </li>
+    {{/each}}
+</ul>
+
+<form id="formularioProducto">
+    <input type="text" id="nombre" placeholder="Nombre" required>
+    <input type="number" id="precio" placeholder="Precio" required>
+    <button type="submit">Agregar Producto</button>
+</form>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    // Capturar el formulario de agregar producto
+    document.getElementById('formularioProducto').addEventListener('submit', (event) => {
+        event.preventDefault();
+        
+        const title = document.getElementById('nombre').value;
+        const price = document.getElementById('precio').value;
+
+        if (title && price) {
+            const nuevoProducto = { title, price: Number(price) };
+            socket.emit("newProduct", nuevoProducto);
+        }
+    });
+
+    // Escuchar actualización de productos
+    socket.on("updateProducts", (productos) => {
+        const lista = document.getElementById('listaProductos');
+        lista.innerHTML = ''; // Limpiar la lista
+
+        productos.forEach(producto => {
+            const item = document.createElement("li");
+            item.setAttribute("data-id", producto.id);
+            item.innerHTML = `
+                <strong>${producto.title}</strong> - $${producto.price}
+                <button class="eliminar-btn">❌ Eliminar</button>
+            `;
+            lista.appendChild(item);
+        });
+    });
+
+    // Delegación de eventos para eliminar productos
+    document.getElementById('listaProductos').addEventListener('click', (event) => {
+        if (event.target.classList.contains("eliminar-btn")) {
+            const productoID = event.target.parentElement.getAttribute("data-id");
+            socket.emit("deleteProduct", productoID);
+        }
+    });
+</script>
