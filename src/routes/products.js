@@ -1,42 +1,83 @@
-// src/routes/products.js (CommonJS)
-const { Router } = require("express");
-const { readFileSync, writeFileSync, existsSync } = require("fs");
+const express = require("express");
+const fs = require("fs");
 const path = require("path");
 
-const router = Router();
-const productsFile = path.join(__dirname, "..", "data", "productos.json");
+const router = express.Router();
+const productsFilePath = path.join(__dirname, "../data/productos.json");
 
+// Función para obtener productos desde el JSON
 function getProducts() {
-  if (!existsSync(productsFile)) return [];
-  const data = readFileSync(productsFile, "utf-8");
-  return data ? JSON.parse(data) : [];
+  try {
+    if (!fs.existsSync(productsFilePath)) return [];
+    const data = fs.readFileSync(productsFilePath, "utf-8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("❌ Error al leer productos:", error);
+    return [];
+  }
 }
 
+// Función para guardar productos en el JSON
 function saveProducts(products) {
-  writeFileSync(productsFile, JSON.stringify(products, null, 2));
+  try {
+    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
+  } catch (error) {
+    console.error("❌ Error al guardar productos:", error);
+  }
 }
 
-// GET all
+// Ruta para obtener todos los productos
 router.get("/", (req, res) => {
   const products = getProducts();
   res.json(products);
 });
 
-// POST new
+// Ruta para agregar un nuevo producto
 router.post("/", (req, res) => {
+  const { title, description, price, stock, category, images } = req.body;
+
+  // Validar campos obligatorios
+  if (!title || !description || !price || !stock || !category) {
+    return res.status(400).json({ error: "Todos los campos son obligatorios, excepto las imágenes." });
+  }
+
+  // Crear nuevo producto
+  const newProduct = {
+    id: Date.now().toString(),
+    title,
+    description,
+    price,
+    stock,
+    category,
+    images: images || [], // Si no se proporcionan imágenes, establecer como un array vacío
+  };
+
+  // Obtener productos existentes y agregar el nuevo
   const products = getProducts();
-  const newProduct = { id: Date.now().toString(), ...req.body };
   products.push(newProduct);
+
+  // Guardar productos actualizados
   saveProducts(products);
+
+  // Responder con el nuevo producto
   res.status(201).json(newProduct);
 });
 
-// DELETE by :id
+// Ruta para eliminar un producto por ID
 router.delete("/:id", (req, res) => {
+  const { id } = req.params;
   let products = getProducts();
-  products = products.filter((p) => p.id !== req.params.id);
-  saveProducts(products);
-  res.json({ message: "Producto eliminado" });
+
+  // Filtrar los productos para eliminar el que coincida con el ID
+  const newProducts = products.filter((product) => product.id !== id);
+
+  if (products.length === newProducts.length) {
+    return res.status(404).json({ error: "Producto no encontrado." });
+  }
+
+  // Guardar la lista actualizada sin el producto eliminado
+  saveProducts(newProducts);
+  res.json({ message: "Producto eliminado correctamente." });
 });
 
 module.exports = router;

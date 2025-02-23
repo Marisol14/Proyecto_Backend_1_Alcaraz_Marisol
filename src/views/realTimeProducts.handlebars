@@ -1,18 +1,26 @@
-<h1>Productos en Tiempo Real</h1>
+<h1 class="titulo">Productos en Tiempo Real</h1>
 
-<ul id="listaProductos">
+<div class="product-container" id="listaProductos">
     {{#each products}}
-        <li data-id="{{this.id}}">
-            <strong>{{this.title}}</strong> - ${{this.price}}
+        <div class="product-card" data-id="{{this.id}}">
+            <h3>{{this.title}}</h3>
+            <p><strong>💲 Precio:</strong> ${{this.price}}</p>
+            <p><strong>📜 Descripción:</strong> {{this.description}}</p>
+            <p><strong>📦 Stock:</strong> {{this.stock}}</p>
+            <p><strong>🏷 Categoría:</strong> {{this.category}}</p>
             <button class="eliminar-btn">❌ Eliminar</button>
-        </li>
+        </div>
     {{/each}}
-</ul>
+</div>
 
+<!-- Formulario de Productos -->
 <form id="formularioProducto">
     <input type="text" id="nombre" placeholder="Nombre" required>
+    <input type="text" id="descripcion" placeholder="Descripción" required>
     <input type="number" id="precio" placeholder="Precio" required>
-    <button type="submit">Agregar Producto</button>
+    <input type="number" id="stock" placeholder="Stock" required>
+    <input type="text" id="categoria" placeholder="Categoría" required>
+    <button type="submit" class="agregar-btn">Agregar Producto</button>
 </form>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -22,12 +30,21 @@
     // Capturar el formulario de agregar producto
     document.getElementById('formularioProducto').addEventListener('submit', (event) => {
         event.preventDefault();
-        
-        const title = document.getElementById('nombre').value;
-        const price = document.getElementById('precio').value;
 
-        if (title && price) {
-            const nuevoProducto = { title, price: Number(price) };
+        const title = document.getElementById('nombre').value;
+        const description = document.getElementById('descripcion').value;
+        const price = document.getElementById('precio').value;
+        const stock = document.getElementById('stock').value;
+        const category = document.getElementById('categoria').value;
+
+        if (title && description && price && stock && category) {
+            const nuevoProducto = { 
+                title, 
+                description, 
+                price: Number(price), 
+                stock: Number(stock), 
+                category 
+            };
             socket.emit("newProduct", nuevoProducto);
         }
     });
@@ -38,10 +55,15 @@
         lista.innerHTML = ''; // Limpiar la lista
 
         productos.forEach(producto => {
-            const item = document.createElement("li");
+            const item = document.createElement("div");
+            item.classList.add("product-card");
             item.setAttribute("data-id", producto.id);
             item.innerHTML = `
-                <strong>${producto.title}</strong> - $${producto.price}
+                <h3>${producto.title}</h3>
+                <p><strong>💲 Precio:</strong> $${producto.price}</p>
+                <p><strong>📜 Descripción:</strong> ${producto.description}</p>
+                <p><strong>📦 Stock:</strong> ${producto.stock}</p>
+                <p><strong>🏷 Categoría:</strong> ${producto.category}</p>
                 <button class="eliminar-btn">❌ Eliminar</button>
             `;
             lista.appendChild(item);

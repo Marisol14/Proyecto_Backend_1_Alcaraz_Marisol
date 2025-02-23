@@ -1,15 +1,21 @@
-{{!-- home.handlebars --}}
-<h1>{{title}}</h1>
+<h1 class="titulo">Lista de Productos</h1>
+
 {{#if products}}
   {{#if products.length}}
-    <ul>
+    <div class="product-container">
       {{#each products}}
-        <li>{{this.title}} - ${{this.price}}</li>
+        <div class="product-card">
+          <h3>{{this.title}}</h3>
+          <p><strong>💲 Precio:</strong> ${{this.price}}</p>
+          <p><strong>📜 Descripción:</strong> {{this.description}}</p>
+          <p><strong>📦 Stock:</strong> {{this.stock}}</p>
+          <p><strong>🏷 Categoría:</strong> {{this.category}}</p>
+        </div>
       {{/each}}
-    </ul>
+    </div>
   {{else}}
-    <p>No hay productos disponibles</p>
+    <p class="mensaje">No hay productos disponibles</p>
   {{/if}}
 {{else}}
-  <p>No hay productos en la lista</p>
+  <p class="mensaje">No hay productos en la lista</p>
 {{/if}}

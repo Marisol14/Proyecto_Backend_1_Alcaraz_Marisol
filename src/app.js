@@ -5,38 +5,31 @@ const { engine } = require("express-handlebars");
 const path = require("path");
 const fs = require("fs");
 
-// Rutas de la API
+// Importar rutas
 const productsRouter = require("./routes/products.js");
 const cartsRouter = require("./routes/carts.js");
+const viewsRouter = require("./routes/views.js");
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 
+// Ruta al archivo de productos
 const productsFilePath = path.join(__dirname, "data", "productos.json");
 
-// --- Función para leer productos desde JSON ---
+// Función para obtener productos
 function getProducts() {
   try {
     if (!fs.existsSync(productsFilePath)) return [];
     const data = fs.readFileSync(productsFilePath, "utf-8");
-    return data ? JSON.parse(data) : [];
+    return JSON.parse(data);
   } catch (error) {
     console.error("❌ Error al leer productos:", error);
     return [];
   }
 }
 
-// --- Función para guardar productos en JSON ---
-function saveProducts(products) {
-  try {
-    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
-  } catch (error) {
-    console.error("❌ Error al guardar productos:", error);
-  }
-}
-
-// Configuración Handlebars
+// Configuración de Handlebars
 app.engine("handlebars", engine());
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "views"));
@@ -46,49 +39,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Rutas API
+// Uso de rutas
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
+app.use("/", viewsRouter); // Se delegan las rutas de vistas al nuevo router
 
-// Ruta HOME: Renderiza la lista de productos
-app.get("/", (req, res) => {
-  const products = getProducts();
-  res.render("home", { title: "Lista de Productos", products });
-});
-
-// Ruta Real Time
-app.get("/realtimeproducts", (req, res) => {
-  res.render("realTimeProducts", { title: "Productos en Tiempo Real" });
-});
-
-// Configuración Socket.io
+// Configuración de WebSockets
 io.on("connection", (socket) => {
   console.log("🟢 Cliente conectado");
 
-  // Enviar la lista de productos actuales al conectarse
+  // Enviar la lista de productos al cliente cuando se conecta
   socket.emit("updateProducts", getProducts());
 
-  // Manejar nuevo producto
+  // Evento para agregar un producto
   socket.on("newProduct", (product) => {
     console.log("📌 Nuevo producto recibido:", product);
-    
     let products = getProducts();
-    product.id = Date.now().toString(); // Asignar un ID único
+    product.id = Date.now().toString();
     products.push(product);
-
-    saveProducts(products); // Guardar en productos.json
-    io.emit("updateProducts", products); // Emitir actualización a todos
+    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
+    io.emit("updateProducts", products);
   });
 
-  // Manejar eliminación de producto
+  // Evento para eliminar un producto
   socket.on("deleteProduct", (id) => {
-    console.log("🗑 Eliminando producto con ID:", id);
-    
-    let products = getProducts();
-    products = products.filter((p) => p.id !== id);
-
-    saveProducts(products); // Guardar cambios en productos.json
-    io.emit("updateProducts", products); // Emitir nueva lista
+    console.log("🗑 Producto eliminado:", id);
+    let products = getProducts().filter((p) => p.id !== id);
+    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
+    io.emit("updateProducts", products);
   });
 
   socket.on("disconnect", () => {
@@ -96,8 +74,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Iniciar servidor
 const PORT = 8080;
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Servidor en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
